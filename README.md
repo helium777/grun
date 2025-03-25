@@ -25,10 +25,10 @@ Since this package is currently in demo stage and not available on PyPI, you can
 
 ```bash
 # Install using uv
-uv pip install git+https://github.com/helium7/grun.git
+uv tool install git+https://github.com/helium777/grun.git
 
 # If you want to use the GPU occupation feature, install with the 'occupy' extra
-uv pip install "grun[occupy] @ git+https://github.com/helium7/grun.git"
+uv tool install "grun[occupy] @ git+https://github.com/helium777/grun.git"
 ```
 
 Alternatively, you can install it using pip:
