@@ -215,7 +215,7 @@ def parse_args():
         default=GpuSelectionStrategy.UTILIZATION.value,
         help="GPU selection strategy (default: utilization)",
     )
-    parser.add_argument("command", nargs="*", help="Command to run")
+    parser.add_argument("command", nargs=argparse.REMAINDER, help="Command to run")
 
     args = parser.parse_args()
 
