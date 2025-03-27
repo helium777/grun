@@ -7,11 +7,12 @@ A simple command-line tool to run scripts when GPU resources are available.
 - Monitor GPU memory and utilization using NVIDIA Management Library (NVML)
 - Run commands when sufficient GPU resources are available
 - Smart GPU selection strategies:
-  - Default: Select GPUs with lowest utilization
+  - Default: Select GPUs with lower utilization
   - Exclusive: Only use GPUs with no other running processes
 - Detailed GPU status reporting (memory, utilization, active processes)
 - Configurable check interval
 - Option to occupy GPU memory and keep it busy with computation
+- Notification support for task status (using Bark or Telegram)
 
 ## Requirements
 
@@ -78,6 +79,51 @@ grun --mem 16 python train.py --batch-size 32 --epochs 100
 ```bash
 grun --mem 16 --occupy
 ```
+
+## Configuration
+
+The tool uses a configuration file located at `~/.config/grun/config.toml` to store settings. You can create or modify this file to customize the behavior.
+
+### Notification Settings
+
+You can configure notifications using the following settings in the config file:
+
+```toml
+[notification]
+service = "bark"  # Options: "bark", "telegram", "slack", or "none" to disable notifications
+notify_on_gpu_found = true  # Whether to notify when GPUs are found
+notify_on_task_complete = true  # Whether to notify when task completes
+
+# Bark notification settings (if service = "bark")
+[notification.bark]
+key = "your-bark-key"  # Your Bark app key
+server = "https://api.day.app"  # Optional: custom Bark server
+
+# Telegram notification settings (if service = "telegram")
+[notification.telegram]
+bot_token = "your-bot-token"  # Your Telegram bot token
+chat_id = "your-chat-id"  # Your Telegram chat ID
+
+# Slack notification settings (if service = "slack")
+[notification.slack]
+webhook_url = "your-webhook-url"  # Your Slack webhook URL
+```
+
+#### Setting up Bark notifications:
+1. Install the Bark app on your iOS device
+2. Get your Bark key from the app
+3. Add it to the config file as shown above
+
+#### Setting up Telegram notifications:
+1. Create a new Telegram bot using [@BotFather](https://t.me/botfather) and get the bot token
+2. Start a chat with your bot and get your chat ID using [@userinfobot](https://t.me/userinfobot)
+3. Add the bot token and chat ID to the config file
+
+#### Setting up Slack notifications:
+1. Create a new Slack app in your workspace at https://api.slack.com/apps
+2. Enable "Incoming Webhooks" in your app's features
+3. Create a new webhook for your desired channel
+4. Copy the webhook URL and add it to the config file
 
 ## How it works
 

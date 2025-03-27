@@ -6,7 +6,10 @@ readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "nvidia-ml-py3>=7.352.0",
+    "pydantic-settings>=2.8.1",
+    "requests>=2.32.3",
     "rich>=13.9.4",
+    "tomli-w>=1.2.0",
 ]
 
 [project.optional-dependencies]

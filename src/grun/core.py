@@ -10,6 +10,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 from enum import Enum
+from .config import settings
+from .notify import get_notifier
 
 
 class GpuSelectionStrategy(Enum):
@@ -33,11 +35,7 @@ def run_command_on_gpu(command: List[str], gpu_indices: List[int]) -> None:
     env = dict(os.environ)
     env["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, gpu_indices))
 
-    try:
-        subprocess.run(command, env=env, check=True)
-    except subprocess.CalledProcessError as e:
-        console.print(f"[red]Error running command: {e}[/red]")
-        sys.exit(1)
+    subprocess.run(command, env=env, check=True)
 
 
 class GpuMonitor:
@@ -234,20 +232,51 @@ def parse_args():
 def main():
     args = parse_args()
 
+    # Get notification service instance
+    notifier = get_notifier()
+
     gpu_monitor = GpuMonitor()
     strategy = GpuSelectionStrategy(args.strategy)
-    gpu_indices = gpu_monitor.wait_for_gpu(args.mem, args.gpus, args.interval, strategy)
+    gpu_indices = gpu_monitor.wait_for_gpu(
+        args.mem,
+        args.gpus,
+        args.interval,
+        strategy,
+    )
 
-    if args.occupy:
-        console.print("\n[yellow]Starting GPU occupier...[/yellow]")
-        from .occupier import occupy_gpu_memory_and_sm
-
-        occupy_gpu_memory_and_sm(
-            memory_gb=args.mem,
-            num_gpus=args.gpus,
-            gpu_indices=gpu_indices,
+    if settings.notification.notify_on_gpu_found:
+        task_name = " ".join(args.command) if not args.occupy else "<GPU Occupation>"
+        notifier.send(
+            "GPUs Found",
+            f"Task `{task_name}` started on GPUs {gpu_indices}",
         )
-    else:
-        command_str = " ".join(args.command)
-        console.print(f"\n[yellow]Running command:[/yellow] {command_str}")
-        run_command_on_gpu(args.command, gpu_indices)
+
+    try:
+        if args.occupy:
+            console.print("\n[yellow]Starting GPU occupier...[/yellow]")
+            from .occupier import occupy_gpu_memory_and_sm
+
+            occupy_gpu_memory_and_sm(
+                memory_gb=args.mem,
+                num_gpus=args.gpus,
+                gpu_indices=gpu_indices,
+            )
+            if settings.notification.notify_on_task_complete:
+                notifier.send("Occupation Complete", "")
+        else:
+            console.print("\n[yellow]Running command...[/yellow]")
+            run_command_on_gpu(args.command, gpu_indices)
+            if settings.notification.notify_on_task_complete:
+                notifier.send("Task Complete", f"Command: {' '.join(args.command)}")
+    except Exception as e:
+        if settings.notification.notify_on_task_complete:
+            task_name = (
+                " ".join(args.command) if not args.occupy else "<GPU Occupation>"
+            )
+            msg = f"Error: {e}, Task: {task_name}"
+            notifier.send("Task Failed", msg)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
